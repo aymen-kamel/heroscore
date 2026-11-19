@@ -12,8 +12,10 @@ const CourtReplay = dynamic(() => import('./CourtReplay'), { ssr: false });
 
 // Visuel du hero (généré avec ChatGPT). Si tu ajoutes public/videos/hero.mp4, la vidéo remplace l'image ;
 // sinon l'image reste affichée (poster).
-const HERO_IMAGE = '/images/hero.jpg';
-const HERO_VIDEO = '/videos/hero.mp4';
+// Préfixe de chemin (GitHub Pages sert le site sous /heroscore ; vide en local et sur Vercel).
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const HERO_IMAGE = `${BASE}/images/hero.jpg`;
+const HERO_VIDEO = `${BASE}/videos/hero.mp4`;
 
 /** Image/vidéo de fond avec zoom lent + parallax 3D qui suit la souris. */
 function ParallaxMedia({ focus = '70% 50%', zoom = 1, className = '' }: { focus?: string; zoom?: number; className?: string }) {
@@ -155,7 +157,7 @@ function ScrollProgress() {
 
 function Logo({ className = 'h-14 w-auto' }: { className?: string }) {
   // Logo HeroScore (blanc, fond transparent) : public/images/logo.png
-  return <img src="/images/logo.png" alt="HeroScore" className={className} />;
+  return <img src={`${BASE}/images/logo.png`} alt="HeroScore" className={className} />;
 }
 
 function PrimaryButton({ children, href = '#contact' }: { children: ReactNode; href?: string }) {
