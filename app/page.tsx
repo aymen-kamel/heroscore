@@ -16,6 +16,8 @@ const CourtReplay = dynamic(() => import('./CourtReplay'), { ssr: false });
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const HERO_IMAGE = `${BASE}/images/hero.jpg`;
 const HERO_VIDEO = `${BASE}/videos/hero.mp4`;
+// Film promo (55 s, voix off) : lu avec le son, uniquement au clic.
+const PROMO_VIDEO = `${BASE}/videos/promo.mp4`;
 
 /**
  * Image/vidéo de fond avec zoom lent + parallax 3D qui suit la souris.
@@ -234,6 +236,7 @@ function Badge({ children }: { children: ReactNode }) {
 /* ---------------------------------------------------------------- */
 
 const NAV = [
+  { label: 'Film', href: '#film' },
   { label: 'About', href: '#about' },
   { label: 'How it works', href: '#how' },
   { label: 'Features', href: '#features' },
@@ -365,7 +368,14 @@ function Hero() {
 
       <FadeInUp delay={300} className="mt-10 flex flex-row flex-wrap justify-center gap-3">
         <PrimaryButton>Request a demo</PrimaryButton>
-        <SecondaryButton href="#how">See how it works</SecondaryButton>
+        <SecondaryButton href="#film">
+          <span className="inline-flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+              <path d="M7 4l13 8-13 8z" />
+            </svg>
+            Watch the film
+          </span>
+        </SecondaryButton>
       </FadeInUp>
 
       <FadeInUp delay={400} className="w-full">
@@ -391,6 +401,89 @@ function Hero() {
         </div>
       </FadeInUp>
       </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* 2a. Film promo                                                    */
+/* ---------------------------------------------------------------- */
+
+const tiltFilmFx: ScrollFx<HTMLDivElement> = (el, r, vh) => {
+  const p = clamp((vh - r.top) / (vh * 0.8));
+  el.style.transform = `perspective(1400px) rotateX(${(1 - p) * 12}deg) scale(${0.9 + p * 0.1})`;
+};
+
+function Film() {
+  const frameRef = useScrollFx(tiltFilmFx);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [started, setStarted] = useState(false);
+
+  const play = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    setStarted(true);
+    v.muted = false;
+    v.play().catch(() => {});
+  };
+
+  // Met la vidéo en pause si on la fait défiler hors de l'écran.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting && !v.paused) v.pause();
+    }, { threshold: 0.25 });
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <section id="film" className="relative mx-auto max-w-6xl px-6 py-24">
+      <FadeInUp className="mx-auto mb-12 max-w-2xl text-center">
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">The film</p>
+        <h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">
+          Every point, <span className="font-serif font-normal italic">remembered.</span>
+        </h2>
+        <p className="mt-6 text-gray-400">One minute to see what SmartPlay does with a padel match.</p>
+      </FadeInUp>
+
+      <FadeInUp delay={100}>
+        <div
+          ref={frameRef}
+          className="relative mx-auto aspect-video w-full overflow-hidden rounded-3xl border border-white/10 bg-black shadow-[0_40px_120px_-40px_rgba(30,58,138,0.7)] will-change-transform"
+        >
+          <video
+            ref={videoRef}
+            className="h-full w-full object-cover"
+            src={PROMO_VIDEO}
+            poster={HERO_IMAGE}
+            preload="none"
+            playsInline
+            controls={started}
+            onEnded={() => setStarted(false)}
+          />
+          {!started && (
+            <button
+              type="button"
+              onClick={play}
+              className="group absolute inset-0 flex flex-col items-center justify-center gap-5 bg-black/50 text-white transition-colors hover:bg-black/35"
+              aria-label="Play the HeroScore film (55 seconds, with sound)"
+            >
+              <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white text-black transition-transform duration-300 group-hover:scale-110 md:h-24 md:w-24">
+                <span className="absolute inset-0 animate-ping rounded-full bg-white/30 motion-reduce:animate-none" />
+                <svg viewBox="0 0 24 24" className="relative ml-1 h-8 w-8" fill="currentColor" aria-hidden>
+                  <path d="M7 4l13 8-13 8z" />
+                </svg>
+              </span>
+              <span className="text-sm font-medium text-gray-200">Watch the film · 0:55 · sound on</span>
+            </button>
+          )}
+        </div>
+        <p className="mt-4 text-center text-xs text-gray-500">
+          Demo on third-party broadcast footage, for evaluation only.
+        </p>
+      </FadeInUp>
     </section>
   );
 }
@@ -907,6 +1000,7 @@ export default function Page() {
       <ScrollProgress />
       <Nav />
       <Hero />
+      <Film />
       <About />
       <HowItWorks />
       <FeatureAnalysis />
