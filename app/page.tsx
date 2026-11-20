@@ -17,32 +17,74 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const HERO_IMAGE = `${BASE}/images/hero.jpg`;
 const HERO_VIDEO = `${BASE}/videos/hero.mp4`;
 
-/** Image/vidéo de fond avec zoom lent + parallax 3D qui suit la souris. */
+/**
+ * Image/vidéo de fond avec zoom lent + parallax 3D qui suit la souris.
+ * - Le parallax écrit directement le style (pas de re-render React à chaque mouvement de souris).
+ * - Désactivé sur écran tactile et si prefers-reduced-motion.
+ * - La vidéo n'est lue que lorsqu'elle est visible (4 instances sur la page).
+ */
 function ParallaxMedia({ focus = '70% 50%', zoom = 1, className = '' }: { focus?: string; zoom?: number; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [p, setP] = useState({ x: 0, y: 0 });
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return;
+    const setT = (x: number, y: number) => {
+      layer.style.transform = `translate3d(${x * -24}px, ${y * -16}px, 0) rotateY(${x * 3}deg) rotateX(${y * -2}deg) scale(${zoom})`;
+    };
+    setT(0, 0);
+    const still = window.matchMedia('(prefers-reduced-motion: reduce), (pointer: coarse)').matches;
+    if (still) return;
+    let raf = 0;
+    let x = 0;
+    let y = 0;
     const onMove = (e: MouseEvent) => {
-      setP({ x: e.clientX / window.innerWidth - 0.5, y: e.clientY / window.innerHeight - 0.5 });
+      x = e.clientX / window.innerWidth - 0.5;
+      y = e.clientY / window.innerHeight - 0.5;
+      if (!raf)
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          setT(x, y);
+        });
     };
     window.addEventListener('mousemove', onMove, { passive: true });
-    return () => window.removeEventListener('mousemove', onMove);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', onMove);
+    };
+  }, [zoom]);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const video = videoRef.current;
+    if (!wrap || !video) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      video.pause();
+      return;
+    }
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) video.play().catch(() => {});
+      else video.pause();
+    });
+    io.observe(wrap);
+    return () => io.disconnect();
   }, []);
+
   return (
-    <div ref={ref} className={`absolute inset-0 overflow-hidden [perspective:1200px] ${className}`}>
-      <div
-        className="absolute -inset-[6%] transition-transform duration-700 ease-out"
-        style={{ transform: `translate3d(${p.x * -24}px, ${p.y * -16}px, 0) rotateY(${p.x * 3}deg) rotateX(${p.y * -2}deg) scale(${zoom})` }}
-      >
+    <div ref={wrapRef} aria-hidden className={`absolute inset-0 overflow-hidden [perspective:1200px] ${className}`}>
+      <div ref={layerRef} className="absolute -inset-[6%] transition-transform duration-700 ease-out">
         <video
-          className="h-full w-full animate-[kenburns_24s_ease-in-out_infinite_alternate] object-cover"
+          ref={videoRef}
+          className="h-full w-full animate-[kenburns_24s_ease-in-out_infinite_alternate] object-cover motion-reduce:animate-none"
           style={{ objectPosition: focus }}
           src={HERO_VIDEO}
           poster={HERO_IMAGE}
-          autoPlay
           muted
           loop
           playsInline
+          preload="metadata"
         />
       </div>
     </div>
@@ -222,7 +264,7 @@ function Nav() {
       }`}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <a href="#about" className="flex items-center text-white">
+        <a href="#top" className="flex items-center text-white" aria-label="HeroScore – back to top">
           <Logo />
         </a>
 
@@ -292,7 +334,7 @@ function Hero() {
   const contentRef = useScrollFx(heroContentFx);
   const bgRef = useScrollFx(heroBgFx);
   return (
-    <section id="about" className="relative z-0 flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-32">
+    <section id="top" className="relative z-0 flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-32">
       <div ref={bgRef} className="absolute inset-0 -z-10 will-change-transform">
         <ParallaxMedia className="opacity-90" />
       </div>
@@ -315,16 +357,15 @@ function Hero() {
       </FadeInUp>
 
       <FadeInUp delay={200}>
-        <p className="mx-auto max-w-2xl text-center text-[16px] text-gray-400">
-          We have explored AI across football, basketball and padel. Now, we’re focusing our technology and resources on the
-          growing Tunisian padel market, where we see an opportunity to transform how the game is analyzed, understood and
-          experienced.
+        <p className="mx-auto max-w-2xl text-center text-[17px] leading-relaxed text-gray-300">
+          HeroScore builds computer vision for sport. Our first product, <span className="text-white">SmartPlay</span>, turns a
+          single padel match video into player tracking, heatmaps and movement stats.
         </p>
       </FadeInUp>
 
       <FadeInUp delay={300} className="mt-10 flex flex-row flex-wrap justify-center gap-3">
         <PrimaryButton>Request a demo</PrimaryButton>
-        <SecondaryButton>Learn more</SecondaryButton>
+        <SecondaryButton href="#how">See how it works</SecondaryButton>
       </FadeInUp>
 
       <FadeInUp delay={400} className="w-full">
@@ -336,7 +377,8 @@ function Hero() {
             WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
           }}
         >
-          <div className="flex w-max animate-[marquee_30s_linear_infinite]">
+          <p className="sr-only">{SPORTS_TECH.map((s) => s.name).join(', ')}</p>
+          <div aria-hidden className="flex w-max animate-[marquee_30s_linear_infinite] motion-reduce:animate-none">
             {items.map((b, i) => (
               <div key={i} className="flex flex-shrink-0 items-center gap-2.5 px-8 text-gray-400">
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -349,6 +391,103 @@ function Hero() {
         </div>
       </FadeInUp>
       </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* 2b. About (histoire, mission, équipe)                             */
+/* ---------------------------------------------------------------- */
+
+const STORY = [
+  {
+    k: 'Explore',
+    title: 'AI across three sports',
+    text: 'We started by testing computer vision on football, basketball and padel, to learn what video alone can reliably measure.',
+  },
+  {
+    k: 'Focus',
+    title: 'Padel, in Tunisia',
+    text: 'Padel is growing fast in Tunisia, and most players and clubs still have no data on their game. That is where we put our resources.',
+  },
+  {
+    k: 'Build',
+    title: 'SmartPlay',
+    text: 'Our first product: one fixed camera, one match video, and an analysis of every player and rally. Working prototype, open to pilots.',
+  },
+];
+
+const PRINCIPLES = [
+  { title: 'Video only', text: 'No sensors or wearables. A single fixed camera is enough.' },
+  { title: 'Honest about status', text: 'We label every feature as prototype or coming soon until it is proven.' },
+  { title: 'Your footage stays yours', text: 'Match videos are used only to produce your analysis.' },
+];
+
+// Profils : compléter les rôles / liens dès qu'ils sont validés (voir CLAUDE.md « À faire »).
+const TEAM = [
+  { name: 'Aymen Kamel', role: 'Co-founder', initials: 'AK' },
+  { name: 'Racem Dammak', role: 'Co-founder', initials: 'RD' },
+];
+
+function About() {
+  return (
+    <section id="about" className="mx-auto max-w-7xl px-6 py-24">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+        <FadeInUp>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">About HeroScore</p>
+          <h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">
+            Sport data for everyone, <span className="font-serif font-normal italic">not just the pros.</span>
+          </h2>
+          <p className="mt-6 max-w-md leading-relaxed text-gray-400">
+            Professional teams have analysts and tracking systems. Club players and coaches have a phone and a feeling. HeroScore
+            is a Tunisian SportTech &amp; AI startup closing that gap with computer vision, starting with padel.
+          </p>
+        </FadeInUp>
+
+        <ol className="relative space-y-4 border-l border-white/10 pl-8">
+          {STORY.map((s, i) => (
+            <FadeInUp key={s.k} delay={i * 100}>
+              <li className="relative">
+                <span className="absolute -left-[37px] top-1.5 h-2.5 w-2.5 rounded-full bg-brand-blue ring-4 ring-black" />
+                <p className="font-serif text-lg italic text-white/40">{s.k}</p>
+                <h3 className="mt-1 text-lg font-medium text-white">{s.title}</h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-400">{s.text}</p>
+              </li>
+            </FadeInUp>
+          ))}
+        </ol>
+      </div>
+
+      <div className="mt-20 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
+        {PRINCIPLES.map((p, i) => (
+          <FadeInUp key={p.title} delay={i * 80} className="h-full">
+            <div className="h-full bg-black p-6">
+              <h3 className="text-base font-medium text-white">{p.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-400">{p.text}</p>
+            </div>
+          </FadeInUp>
+        ))}
+      </div>
+
+      <FadeInUp className="mt-20">
+        <h3 className="text-center text-sm font-medium uppercase tracking-[0.2em] text-gray-500">The team</h3>
+        <ul className="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
+          {TEAM.map((m) => (
+            <li key={m.name} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0A0A0B] p-5">
+              <span
+                aria-hidden
+                className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-brand-blue/60 bg-brand-blue/25 font-serif text-xl italic text-white"
+              >
+                {m.initials}
+              </span>
+              <div>
+                <p className="font-medium text-white">{m.name}</p>
+                <p className="text-sm text-gray-400">{m.role}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </FadeInUp>
     </section>
   );
 }
@@ -695,10 +834,13 @@ function FAQ() {
 /* 8. Footer                                                         */
 /* ---------------------------------------------------------------- */
 
+const CONTACT_EMAIL = 'kamelaymen793@gmail.com';
+
+// Liens réseaux sociaux / pages légales : les ajouter ici dès que les vraies URL existent (pas de liens « # » morts).
 const COLS = [
-  { title: 'Product', links: [['About', '#about'], ['Features', '#features'], ['FAQ', '#faq'], ['Contact', '#contact']] },
-  { title: 'Legal', links: [['Terms of service', '#'], ['Privacy policy', '#']] },
-  { title: 'Connect', links: [['Instagram', '#'], ['YouTube', '#'], ['LinkedIn', '#'], ['Twitter / X', '#']] },
+  { title: 'Company', links: [['About', '#about'], ['Team', '#about'], ['FAQ', '#faq']] },
+  { title: 'Product', links: [['How it works', '#how'], ['Features', '#features'], ['3D replay', '#replay']] },
+  { title: 'Contact', links: [['Email us', `mailto:${CONTACT_EMAIL}`], ['Request a demo', `mailto:${CONTACT_EMAIL}?subject=SmartPlay%20demo`]] },
 ];
 
 function Footer() {
@@ -714,8 +856,8 @@ function Footer() {
         </h2>
         <p className="mt-6 max-w-xl text-[16px] text-gray-400">Club, coach or player in Tunisia? Run SmartPlay on one of your matches.</p>
         <div className="mt-10 flex flex-row flex-wrap justify-center gap-3">
-          <PrimaryButton href="mailto:kamelaymen793@gmail.com?subject=SmartPlay%20demo">Request a demo</PrimaryButton>
-          <SecondaryButton>Learn more</SecondaryButton>
+          <PrimaryButton href={`mailto:${CONTACT_EMAIL}?subject=SmartPlay%20demo`}>Request a demo</PrimaryButton>
+          <SecondaryButton href="#about">About us</SecondaryButton>
         </div>
       </FadeInUp>
 
@@ -765,6 +907,7 @@ export default function Page() {
       <ScrollProgress />
       <Nav />
       <Hero />
+      <About />
       <HowItWorks />
       <FeatureAnalysis />
       <FeatureTracking />

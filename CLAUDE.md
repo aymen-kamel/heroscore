@@ -5,7 +5,7 @@ Slogan : « Making sports intelligent. »
 
 ## Stack
 - Next.js (App Router, export statique `out/`), TypeScript, Tailwind CSS v4
-- Page entière dans `app/page.tsx` (un seul fichier React, sections : Nav, Hero, How it works, Feature analyse, Feature tracking, 3D replay (`app/CourtReplay.tsx`), Capabilities, FAQ, Footer)
+- Page entière dans `app/page.tsx` (un seul fichier React, sections : Nav, Hero (#top), About (#about : histoire, principes, équipe), How it works, Feature analyse, Feature tracking, 3D replay (`app/CourtReplay.tsx`), Capabilities, FAQ, Footer)
 - 3D replay (marketing) : scène three.js portée de l'artifact « HeroScore Real Replay », mais rallye 100 % chorégraphié dans `app/rallySim.ts` (aucune donnée réelle, choix d'Aymen). Effets : bloom (desktop), balle lumineuse + traînée, rebonds/vitre (ondes), swing, nom du coup + vitesse, score, heatmap/traces/carte des rebonds. Bloc feature (pas dans le hero) ; au scroll la carte s'incline puis se pose et, en mode Cinematic, la caméra suit le scroll. Mention « animated demo » sous la carte ; « Shot type » et « Live score » marqués Coming soon
 - Couleurs : noir / blanc / gris uniquement + une touche de bleu foncé (`--color-brand-blue` dans `globals.css`). Logo : `public/images/logo.png` (blanc, fond transparent)
 - Contenu SmartPlay basé sur le PFE (`../../pfe_examination_smartplay.md`) : pipeline réel (homographie 10×20 m, tracking 4 joueurs, TrackNet 8 frames, export MP4 + CSV)
@@ -21,7 +21,7 @@ Slogan : « Making sports intelligent. »
 - Visuels générés avec ChatGPT : à mettre dans `public/images/`.
 
 ## À faire
-- Remplir le profil de Racem (section équipe).
+- Compléter les rôles et liens (LinkedIn) de l’équipe dans `TEAM` (section About).
 - Remplacer le visuel par une vraie capture/vidéo de SmartPlay dès qu’elle existe.
 - Formulaire de contact réel (aujourd’hui : lien mailto).
 - Version anglaise.
