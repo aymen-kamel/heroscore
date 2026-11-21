@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 
 // Terrain 3D (three.js) chargé uniquement côté client, dans son propre bundle.
@@ -18,6 +18,25 @@ const HERO_IMAGE = `${BASE}/images/hero.jpg`;
 const HERO_VIDEO = `${BASE}/videos/hero.mp4`;
 // Film promo (55 s, voix off) : lu avec le son, uniquement au clic.
 const PROMO_VIDEO = `${BASE}/videos/promo.mp4`;
+
+/* Contact : pas de backend (site statique) → on ouvre l'application mail du visiteur, e-mail pré-rempli. */
+const CONTACT_EMAIL = 'kamelaymen793@gmail.com';
+const DEMO_SUBJECT = 'SmartPlay demo request';
+const DEMO_BODY = `Hello HeroScore team,
+
+I would like a demo of SmartPlay.
+
+Name:
+Club / role:
+City:
+
+Thanks!`;
+const mailtoHref = (subject: string, body: string) =>
+  `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+// Secours pour les visiteurs sans application mail (fréquent sur PC) : composer dans Gmail web.
+const gmailHref = (subject: string, body: string) =>
+  `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_EMAIL}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+const DEMO_MAILTO = mailtoHref(DEMO_SUBJECT, DEMO_BODY);
 
 /**
  * Image/vidéo de fond avec zoom lent + parallax 3D qui suit la souris.
@@ -204,7 +223,7 @@ function Logo({ className = 'h-14 w-auto' }: { className?: string }) {
   return <img src={`${BASE}/images/logo.png`} alt="HeroScore" className={className} />;
 }
 
-function PrimaryButton({ children, href = '#contact' }: { children: ReactNode; href?: string }) {
+function PrimaryButton({ children, href = DEMO_MAILTO }: { children: ReactNode; href?: string }) {
   return (
     <a href={href} className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-gray-200">
       {children}
@@ -280,7 +299,7 @@ function Nav() {
         </nav>
 
         <a
-          href="#contact"
+          href={DEMO_MAILTO}
           className="hidden rounded-full border border-white/5 bg-[#1F1F22] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2A2A2D] md:inline-flex"
         >
           Request a demo
@@ -310,9 +329,13 @@ function Nav() {
                 {l.label}
               </button>
             ))}
-            <button onClick={() => go('#contact')} className="mt-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-black">
+            <a
+              href={DEMO_MAILTO}
+              onClick={() => setOpen(false)}
+              className="mt-2 rounded-full bg-white px-5 py-3 text-center text-sm font-medium text-black"
+            >
               Request a demo
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -927,14 +950,103 @@ function FAQ() {
 /* 8. Footer                                                         */
 /* ---------------------------------------------------------------- */
 
-const CONTACT_EMAIL = 'kamelaymen793@gmail.com';
-
 // Liens réseaux sociaux / pages légales : les ajouter ici dès que les vraies URL existent (pas de liens « # » morts).
 const COLS = [
   { title: 'Company', links: [['About', '#about'], ['Team', '#about'], ['FAQ', '#faq']] },
   { title: 'Product', links: [['How it works', '#how'], ['Features', '#features'], ['3D replay', '#replay']] },
-  { title: 'Contact', links: [['Email us', `mailto:${CONTACT_EMAIL}`], ['Request a demo', `mailto:${CONTACT_EMAIL}?subject=SmartPlay%20demo`]] },
+  { title: 'Contact', links: [['Email us', `mailto:${CONTACT_EMAIL}`], ['Request a demo', DEMO_MAILTO]] },
 ];
+
+const ROLES = ['Padel club', 'Coach', 'Player', 'Other'] as const;
+
+/**
+ * Formulaire de contact sans serveur : à l'envoi, ouvre l'application mail du visiteur
+ * avec un e-mail déjà rédigé pour CONTACT_EMAIL. Secours : Gmail web ou copier l'adresse.
+ */
+function ContactForm() {
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<(typeof ROLES)[number]>('Padel club');
+  const [message, setMessage] = useState('');
+  const [sent, setSent] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const subject = `SmartPlay – ${role}${name ? ` – ${name}` : ''}`;
+  const body = `Hello HeroScore team,\n\n${message || 'I would like to know more about SmartPlay.'}\n\nName: ${name}\nI am: ${role}\n`;
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    window.location.href = mailtoHref(subject, body);
+    setSent(true);
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* presse-papiers indisponible : l'adresse reste visible */
+    }
+  };
+
+  const field =
+    'w-full rounded-xl border border-white/10 bg-black/60 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-brand-blue focus:outline-none';
+
+  return (
+    <div className="mx-auto mt-12 w-full max-w-xl rounded-3xl border border-white/10 bg-[#0A0A0B]/80 p-6 text-left backdrop-blur-xl md:p-8">
+      <form onSubmit={submit} className="grid gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+            Your name
+            <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" autoComplete="name" required />
+          </label>
+          <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+            You are
+            <select className={field} value={role} onChange={(e) => setRole(e.target.value as (typeof ROLES)[number])}>
+              {ROLES.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+          Message
+          <textarea
+            className={`${field} min-h-28 resize-y`}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Tell us about your club or your matches…"
+          />
+        </label>
+        <button
+          type="submit"
+          className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-gray-200"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M4 6h16v12H4z" />
+            <path d="M4 7l8 6 8-6" />
+          </svg>
+          Send by email
+        </button>
+        <p className="text-center text-xs text-gray-500" aria-live="polite">
+          {sent ? 'Your email app should be open with the message ready. Just press Send.' : 'Opens your email app with the message ready to send.'}
+        </p>
+      </form>
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-white/10 pt-5 text-xs text-gray-400">
+        <span>
+          No email app? <span className="text-gray-200">{CONTACT_EMAIL}</span>
+        </span>
+        <button type="button" onClick={copy} className="underline-offset-4 hover:text-white hover:underline">
+          {copied ? 'Copied ✓' : 'Copy address'}
+        </button>
+        <a href={gmailHref(subject, body)} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:text-white hover:underline">
+          Open in Gmail
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function Footer() {
   return (
@@ -948,10 +1060,7 @@ function Footer() {
           Ready to make your game <span className="font-serif font-normal italic">intelligent?</span>
         </h2>
         <p className="mt-6 max-w-xl text-[16px] text-gray-400">Club, coach or player in Tunisia? Run SmartPlay on one of your matches.</p>
-        <div className="mt-10 flex flex-row flex-wrap justify-center gap-3">
-          <PrimaryButton href={`mailto:${CONTACT_EMAIL}?subject=SmartPlay%20demo`}>Request a demo</PrimaryButton>
-          <SecondaryButton href="#about">About us</SecondaryButton>
-        </div>
+        <ContactForm />
       </FadeInUp>
 
       <div className="mx-auto mb-24 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-4">
