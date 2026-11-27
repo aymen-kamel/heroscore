@@ -256,6 +256,7 @@ function Badge({ children }: { children: ReactNode }) {
 
 const NAV = [
   { label: 'Film', href: '#film' },
+  { label: 'Free pilot', href: '#pilot' },
   { label: 'About', href: '#about' },
   { label: 'How it works', href: '#how' },
   { label: 'Features', href: '#features' },
@@ -390,7 +391,7 @@ function Hero() {
       </FadeInUp>
 
       <FadeInUp delay={300} className="mt-10 flex flex-row flex-wrap justify-center gap-3">
-        <PrimaryButton>Request a demo</PrimaryButton>
+        <PrimaryButton href="#pilot">Try it free for 1 month</PrimaryButton>
         <SecondaryButton href="#film">
           <span className="inline-flex items-center gap-2">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
@@ -894,6 +895,139 @@ function Capabilities() {
 }
 
 /* ---------------------------------------------------------------- */
+/* 6b. Pilote gratuit d'un mois (inscription + rendez-vous d'abord)  */
+/* ---------------------------------------------------------------- */
+
+const PILOT_STEPS = [
+  { n: '01', title: 'Apply', text: 'Tell us about your club or your matches. It takes two minutes.' },
+  {
+    n: '02',
+    title: 'Meet us first',
+    text: 'We set up a short meeting to check your camera setup and what you want to learn. The pilot starts after we have met.',
+  },
+  {
+    n: '03',
+    title: 'One free month',
+    text: 'We run SmartPlay on your matches and send you the annotated video, player stats, heatmaps and CSV data.',
+  },
+];
+
+const PILOT_SUBJECT = 'Free pilot application';
+
+function PilotForm() {
+  const [name, setName] = useState('');
+  const [club, setClub] = useState('');
+  const [city, setCity] = useState('');
+  const [contact, setContact] = useState('');
+  const [when, setWhen] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const subject = `${PILOT_SUBJECT}${club ? ` – ${club}` : ''}`;
+  const body = `Hello HeroScore team,
+
+I would like to apply for the free 1-month SmartPlay pilot.
+
+Name: ${name}
+Club / team: ${club}
+City: ${city}
+Phone or email: ${contact}
+Best time for a meeting: ${when}
+
+Thanks!`;
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    window.location.href = mailtoHref(subject, body);
+    setSent(true);
+  };
+
+  const field =
+    'w-full rounded-xl border border-white/10 bg-black/60 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-brand-blue focus:outline-none';
+
+  return (
+    <form onSubmit={submit} className="grid gap-4 rounded-3xl border border-white/10 bg-[#0A0A0B] p-6 md:p-8">
+      <p className="text-base font-medium text-white">Apply for the free pilot</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+          Your name
+          <input className={field} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
+        </label>
+        <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+          Club or team
+          <input className={field} value={club} onChange={(e) => setClub(e.target.value)} required />
+        </label>
+        <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+          City
+          <input className={field} value={city} onChange={(e) => setCity(e.target.value)} required />
+        </label>
+        <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+          Phone or email
+          <input className={field} value={contact} onChange={(e) => setContact(e.target.value)} required />
+        </label>
+      </div>
+      <label className="grid gap-1.5 text-xs font-medium text-gray-400">
+        Best time for a short meeting
+        <input className={field} value={when} onChange={(e) => setWhen(e.target.value)} placeholder="e.g. weekdays after 6 pm" />
+      </label>
+      <button
+        type="submit"
+        className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-gray-200"
+      >
+        Apply by email
+      </button>
+      <p className="text-center text-xs text-gray-500" aria-live="polite">
+        {sent
+          ? 'Your email app should be open with your application ready. Just press Send.'
+          : 'Opens your email app with your application ready to send.'}
+      </p>
+      <p className="text-center text-xs text-gray-500">
+        No email app?{' '}
+        <a href={gmailHref(subject, body)} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-white">
+          Open in Gmail
+        </a>
+      </p>
+    </form>
+  );
+}
+
+function Pilot() {
+  return (
+    <section id="pilot" className="mx-auto max-w-7xl px-6 py-24">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
+        <FadeInUp>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-gray-500">Free pilot</p>
+          <h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">
+            Try SmartPlay <span className="font-serif font-normal italic">free for one month.</span>
+          </h2>
+          <p className="mt-6 max-w-lg leading-relaxed text-gray-400">
+            We are opening a free one-month pilot for padel clubs, coaches and players in Tunisia. SmartPlay is a working
+            prototype, so the pilot is how we learn from real matches and improve it with you.
+          </p>
+          <ol className="mt-10 space-y-6">
+            {PILOT_STEPS.map((s) => (
+              <li key={s.n} className="flex gap-5">
+                <span className="font-serif text-3xl italic text-white/30">{s.n}</span>
+                <div>
+                  <h3 className="text-base font-medium text-white">{s.title}</h3>
+                  <p className="mt-1 max-w-md text-sm leading-relaxed text-gray-400">{s.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 max-w-md text-xs leading-relaxed text-gray-500">
+            The pilot is confirmed after our meeting. A fixed camera placed high behind the court is needed.
+          </p>
+        </FadeInUp>
+
+        <FadeInUp delay={150}>
+          <PilotForm />
+        </FadeInUp>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
 /* 7. FAQ                                                            */
 /* ---------------------------------------------------------------- */
 
@@ -916,7 +1050,7 @@ const FAQS = [
   },
   {
     q: 'Is SmartPlay available today?',
-    a: 'SmartPlay is currently a working prototype. We are looking for padel clubs, coaches and players in Tunisia to run pilots with us.',
+    a: 'SmartPlay is currently a working prototype. We offer a free one-month pilot to padel clubs, coaches and players in Tunisia: apply on this page, we meet first to check your camera setup, then we run SmartPlay on your matches.',
   },
   {
     q: 'Is my match video safe?',
@@ -1141,6 +1275,7 @@ export default function Page() {
       <FeatureTracking />
       <CourtReplay />
       <Capabilities />
+      <Pilot />
       <FAQ />
       <Footer />
     </main>

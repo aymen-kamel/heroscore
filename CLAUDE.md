@@ -23,5 +23,6 @@ Slogan : « Making sports intelligent. »
 ## À faire
 - Ajouter les liens LinkedIn / GitHub des fondateurs dans `TEAM` (section About ; bios et e-mails déjà ajoutés).
 - Remplacer le visuel par une vraie capture/vidéo de SmartPlay dès qu’elle existe.
-- Formulaire de contact réel (aujourd’hui : lien mailto).
+- Formulaires (contact + pilote) : aujourd’hui ouvrent le mail du visiteur (mailto) ; brancher Formspree/Web3Forms si on veut un envoi direct.
+- Pilote gratuit 1 mois (section #pilot) : inscription + rendez-vous avant de démarrer ; conditions détaillées à confirmer (durée, ce qui est inclus, nombre de places).
 - Version anglaise.
