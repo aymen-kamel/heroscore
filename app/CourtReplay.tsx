@@ -936,7 +936,7 @@ export default function CourtReplay() {
     <section id="replay" ref={sectionRef} className="mx-auto max-w-7xl px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <span className="mb-6 inline-flex rounded-full border border-brand-blue/60 bg-brand-blue/20 px-3 py-1.5 text-xs font-medium text-white">
-          ✨ 3D replay
+          3D replay
         </span>
         <h2 className="text-4xl font-semibold tracking-tight md:text-6xl">
           Relive every rally <span className="font-serif font-normal italic">in 3D.</span>

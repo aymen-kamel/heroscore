@@ -245,7 +245,7 @@ function SecondaryButton({ children, href = '#features' }: { children: ReactNode
 function Badge({ children }: { children: ReactNode }) {
   return (
     <span className="mb-6 inline-flex rounded-full border border-brand-blue/60 bg-brand-blue/20 px-3 py-1.5 text-xs font-medium text-white">
-      ✨ {children}
+      {children}
     </span>
   );
 }
@@ -370,7 +370,7 @@ function Hero() {
       <div ref={contentRef} className="flex w-full flex-col items-center will-change-transform">
       <FadeInUp className="flex flex-col items-center">
         <span className="mb-8 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-300 backdrop-blur-sm">
-          ✨ Now focused on padel in Tunisia
+          Now focused on padel in Tunisia
         </span>
       </FadeInUp>
 
@@ -539,10 +539,22 @@ const PRINCIPLES = [
   { title: 'Your footage stays yours', text: 'Match videos are used only to produce your analysis.' },
 ];
 
-// Profils : compléter les rôles / liens dès qu'ils sont validés (voir CLAUDE.md « À faire »).
+// Profils issus des CV des fondateurs. Garder des faits vérifiables (voir CLAUDE.md : pas de chiffres non vérifiés).
 const TEAM = [
-  { name: 'Aymen Kamel', role: 'Co-founder', initials: 'AK' },
-  { name: 'Racem Dammak', role: 'Co-founder', initials: 'RD' },
+  {
+    name: 'Aymen Kamel',
+    role: 'Co-founder · Lead AI Developer',
+    initials: 'AK',
+    email: 'kamelaymen793@gmail.com',
+    bio: 'Computer science engineering student (Data & AI) at IIT Sfax, focused on computer vision. Aymen built SmartPlay from video capture to detection, tracking and court mapping as his final-year project, then turned it into HeroScore with Racem.',
+  },
+  {
+    name: 'Racem Dammak',
+    role: 'Co-founder · AI & Software Engineer',
+    initials: 'RD',
+    email: 'racemdammak99@gmail.com',
+    bio: 'AI and software engineer building end-to-end systems, from models and data pipelines to production infrastructure. Racem worked on HeroScore’s first AI models for football through the OSTX program and now leads the engineering side.',
+  },
 ];
 
 function About() {
@@ -587,19 +599,32 @@ function About() {
 
       <FadeInUp className="mt-20">
         <h3 className="text-center text-sm font-medium uppercase tracking-[0.2em] text-gray-500">The team</h3>
-        <ul className="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
+        <ul className="mx-auto mt-8 grid max-w-4xl gap-4 md:grid-cols-2">
           {TEAM.map((m) => (
-            <li key={m.name} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0A0A0B] p-5">
-              <span
-                aria-hidden
-                className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-brand-blue/60 bg-brand-blue/25 font-serif text-xl italic text-white"
-              >
-                {m.initials}
-              </span>
-              <div>
-                <p className="font-medium text-white">{m.name}</p>
-                <p className="text-sm text-gray-400">{m.role}</p>
+            <li key={m.name} className="flex flex-col rounded-2xl border border-white/10 bg-[#0A0A0B] p-6">
+              <div className="flex items-center gap-4">
+                <span
+                  aria-hidden
+                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-brand-blue/60 bg-brand-blue/25 font-serif text-xl italic text-white"
+                >
+                  {m.initials}
+                </span>
+                <div>
+                  <p className="font-medium text-white">{m.name}</p>
+                  <p className="text-sm text-gray-400">{m.role}</p>
+                </div>
               </div>
+              <p className="mt-5 flex-1 text-sm leading-relaxed text-gray-400">{m.bio}</p>
+              <a
+                href={`mailto:${m.email}?subject=${encodeURIComponent('HeroScore')}`}
+                className="mt-5 inline-flex items-center gap-2 self-start text-sm text-gray-300 underline-offset-4 transition-colors hover:text-white hover:underline"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M4 6h16v12H4z" />
+                  <path d="M4 7l8 6 8-6" />
+                </svg>
+                {m.email}
+              </a>
             </li>
           ))}
         </ul>

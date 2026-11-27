@@ -21,7 +21,7 @@ Slogan : « Making sports intelligent. »
 - Visuels générés avec ChatGPT : à mettre dans `public/images/`.
 
 ## À faire
-- Compléter les rôles et liens (LinkedIn) de l’équipe dans `TEAM` (section About).
+- Ajouter les liens LinkedIn / GitHub des fondateurs dans `TEAM` (section About ; bios et e-mails déjà ajoutés).
 - Remplacer le visuel par une vraie capture/vidéo de SmartPlay dès qu’elle existe.
 - Formulaire de contact réel (aujourd’hui : lien mailto).
 - Version anglaise.
