@@ -18,6 +18,7 @@ Slogan : « Making sports intelligent. »
 - Pas de chiffres (clients, précision du modèle, revenus) non vérifiés.
 
 ## Images
+- Photos équipe : `public/images/team/` (`nom.jpg` ~900 px + `nom-thumb.jpg` 256 px carré). Clic sur une carte de l’équipe (section About) = fenêtre photo animée (`TeamModal`).
 - Visuels générés avec ChatGPT : à mettre dans `public/images/`.
 
 ## À faire

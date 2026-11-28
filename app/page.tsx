@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 
 // Terrain 3D (three.js) chargé uniquement côté client, dans son propre bundle.
@@ -545,20 +545,158 @@ const TEAM = [
   {
     name: 'Aymen Kamel',
     role: 'Co-founder · Lead AI Developer',
-    initials: 'AK',
+    photo: `${BASE}/images/team/aymen.jpg`,
+    thumb: `${BASE}/images/team/aymen-thumb.jpg`,
     email: 'kamelaymen793@gmail.com',
     bio: 'Computer science engineering student (Data & AI) at IIT Sfax, focused on computer vision. Aymen built SmartPlay from video capture to detection, tracking and court mapping as his final-year project, then turned it into HeroScore with Racem.',
   },
   {
     name: 'Racem Dammak',
     role: 'Co-founder · AI & Software Engineer',
-    initials: 'RD',
+    photo: `${BASE}/images/team/racem.jpg`,
+    thumb: `${BASE}/images/team/racem-thumb.jpg`,
     email: 'racemdammak99@gmail.com',
     bio: 'AI and software engineer building end-to-end systems, from models and data pipelines to production infrastructure. Racem worked on HeroScore’s first AI models for football through the OSTX program and now leads the engineering side.',
   },
 ];
 
+type Member = (typeof TEAM)[number];
+
+/**
+ * Fenêtre « photo » d'un fondateur : s'ouvre depuis la vignette (zoom depuis le clic),
+ * révélation circulaire de la photo, texte qui monte en cascade. Échap / clic dehors pour fermer.
+ */
+function TeamModal({ member, origin, onClose }: { member: Member; origin: { x: number; y: number }; onClose: () => void }) {
+  const [shown, setShown] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const closing = useRef(false);
+
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    setShown(false);
+    setTimeout(onClose, 320);
+  };
+
+  useEffect(() => {
+    const el = dialogRef.current;
+    if (el) el.style.transformOrigin = `${origin.x - el.offsetLeft}px ${origin.y - el.offsetTop}px`;
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      if (e.key === 'Tab' && dialogRef.current) {
+        const items = dialogRef.current.querySelectorAll<HTMLElement>('button, a[href]');
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const rise = (i: number) => ({
+    style: { transitionDelay: shown ? `${350 + i * 90}ms` : '0ms' },
+    className: `transition-all duration-700 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`,
+  });
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={member.name} className="fixed inset-0 z-[70] flex items-center justify-center p-4" onClick={close}>
+      <div className={`absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`} />
+      <div
+        ref={dialogRef}
+        onClick={(e) => e.stopPropagation()}
+        className={`relative grid max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0A0A0B] shadow-[0_40px_120px_-30px_rgba(30,58,138,0.8)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none md:grid-cols-[0.95fr_1.05fr] ${
+          shown ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+        }`}
+      >
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={close}
+          aria-label="Close"
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white backdrop-blur transition-colors hover:bg-black/80"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
+        <div
+          className="relative h-80 overflow-hidden md:h-auto md:min-h-[460px]"
+          style={{
+            clipPath: shown ? 'circle(150% at 50% 35%)' : 'circle(0% at 50% 35%)',
+            transition: 'clip-path 1000ms cubic-bezier(.7,0,.2,1) 120ms',
+          }}
+        >
+          <img
+            src={member.photo}
+            alt={member.name}
+            className={`absolute inset-0 h-full w-full object-cover object-[50%_14%] md:object-top transition-transform duration-[1600ms] ease-out motion-reduce:transition-none ${shown ? 'scale-100' : 'scale-125'}`}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B]/70 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-[#0A0A0B]/60" />
+        </div>
+
+        <div className="flex flex-col justify-center p-6 md:p-10">
+          <div {...rise(0)}>
+            <h3 className="text-3xl font-semibold tracking-tight text-white">{member.name}</h3>
+            <p className="mt-1 font-serif text-lg italic text-white/60">{member.role}</p>
+          </div>
+          <span
+            className={`my-5 block h-px w-full origin-left bg-gradient-to-r from-brand-blue to-transparent transition-transform duration-1000 ease-out motion-reduce:transition-none ${shown ? 'scale-x-100' : 'scale-x-0'}`}
+            style={{ transitionDelay: shown ? '500ms' : '0ms' }}
+          />
+          <p {...rise(1)} className={`${rise(1).className} text-sm leading-relaxed text-gray-400`}>
+            {member.bio}
+          </p>
+          <a
+            href={`mailto:${member.email}?subject=${encodeURIComponent('HeroScore')}`}
+            {...rise(2)}
+            className={`${rise(2).className} mt-6 inline-flex items-center gap-2 self-start rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black hover:bg-gray-200`}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 6h16v12H4z" />
+              <path d="M4 7l8 6 8-6" />
+            </svg>
+            {member.email}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function About() {
+  const [active, setActive] = useState<{ member: Member; origin: { x: number; y: number } } | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  const openMember = (m: Member, e: ReactMouseEvent<HTMLButtonElement>) => {
+    triggerRef.current = e.currentTarget;
+    const avatar = e.currentTarget.querySelector('span')?.getBoundingClientRect();
+    const origin = avatar ? { x: avatar.left + avatar.width / 2, y: avatar.top + avatar.height / 2 } : { x: e.clientX, y: e.clientY };
+    setActive({ member: m, origin });
+  };
+  const preload = (src: string) => {
+    const img = new Image();
+    img.src = src;
+  };
+
   return (
     <section id="about" className="mx-auto max-w-7xl px-6 py-24">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
@@ -602,20 +740,33 @@ function About() {
         <h3 className="text-center text-sm font-medium uppercase tracking-[0.2em] text-gray-500">The team</h3>
         <ul className="mx-auto mt-8 grid max-w-4xl gap-4 md:grid-cols-2">
           {TEAM.map((m) => (
-            <li key={m.name} className="flex flex-col rounded-2xl border border-white/10 bg-[#0A0A0B] p-6">
-              <div className="flex items-center gap-4">
-                <span
-                  aria-hidden
-                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border border-brand-blue/60 bg-brand-blue/25 font-serif text-xl italic text-white"
-                >
-                  {m.initials}
-                </span>
-                <div>
-                  <p className="font-medium text-white">{m.name}</p>
-                  <p className="text-sm text-gray-400">{m.role}</p>
+            <li key={m.name} className="flex flex-col rounded-2xl border border-white/10 bg-[#0A0A0B] p-6 transition-colors duration-300 hover:border-brand-blue/60">
+              <button
+                type="button"
+                onClick={(e) => openMember(m, e)}
+                onPointerEnter={() => preload(m.photo)}
+                onFocus={() => preload(m.photo)}
+                aria-haspopup="dialog"
+                aria-label={`${m.name} – view photo`}
+                className="group flex flex-1 flex-col text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full border border-brand-blue/60 transition-transform duration-300 group-hover:scale-110">
+                    <img src={m.thumb} alt="" className="h-full w-full object-cover" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-white">{m.name}</p>
+                    <p className="text-sm text-gray-400">{m.role}</p>
+                  </div>
                 </div>
-              </div>
-              <p className="mt-5 flex-1 text-sm leading-relaxed text-gray-400">{m.bio}</p>
+                <p className="mt-5 flex-1 text-sm leading-relaxed text-gray-400">{m.bio}</p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-xs text-gray-500 transition-colors group-hover:text-white">
+                  View photo
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
+              </button>
               <a
                 href={`mailto:${m.email}?subject=${encodeURIComponent('HeroScore')}`}
                 className="mt-5 inline-flex items-center gap-2 self-start text-sm text-gray-300 underline-offset-4 transition-colors hover:text-white hover:underline"
@@ -630,6 +781,18 @@ function About() {
           ))}
         </ul>
       </FadeInUp>
+
+      {/* Hors de FadeInUp : un parent transformé casserait le position: fixed de la fenêtre. */}
+      {active && (
+        <TeamModal
+          member={active.member}
+          origin={active.origin}
+          onClose={() => {
+            setActive(null);
+            triggerRef.current?.focus();
+          }}
+        />
+      )}
     </section>
   );
 }
